@@ -37,36 +37,12 @@
      always use physical remote or other app to turn on TV.
 */
 
-'use strict';
+"use strict";
 
 // --------------------------------------------------------------------------------
 
-let SONY_TV_IP = ''; // updated from local storage
-let SONY_TV_PRESHARED_KEY = '';
-// Default list of channels to show as quick-access channel command buttons
-// Format of each button is command-or-channel-number : button-name\n
-const DEFAULT_COMMAND_BUTTONS = `4.1 Enter : CBS 4
-4.3 Enter : dabl 4.3
-4.5 Enter : Catchy
-5.2 Enter : MeTV 5.2
-7.1 Enter : 7 News
-7.2 Enter : this 7
-15.1 Enter : NBC
-15.2 Enter : Cozi
-25.2 Enter : Comet
-25.3 Enter : LAFF
-27.1 Enter : Uni 27
-38.1 Enter : MyTV 38
-38.2 Enter : H&I
-38.5 Enter : Movies
-44.1 Enter : PBS 44
-56.1 Enter : CW 56
-58.1 Enter : grit 58
-66.2 Enter : Bounce
-66.3 Enter : getTV
-68.1 Enter : Ion
-`
-;
+let SONY_TV_IP = ""; // updated from local storage
+let SONY_TV_PRESHARED_KEY = "";
 // While console.log, warn, etc are used liberally, messages to the user
 // are limited by MESSAGE_LEVEL setting. These are messages displayed in
 // a popup (temporarily) div on the page.
@@ -76,30 +52,29 @@ const LEVEL_ERROR = 0; // message level for error messages
 const LEVEL_FEEDBACK = 1; // message level for key button click messages
 const LEVEL_INFO = 2; // message level for each remote button click
 
-const SONY_TV_URL_PREFIX = 'http://';
-const SONY_TV_URL_SUFFIX = '/sony/IRCC';
+const SONY_TV_URL_PREFIX = "http://";
+const SONY_TV_URL_SUFFIX = "/sony/IRCC";
 // Construct the URL as: SONY_TV_URL_PREFIX + SONY_TV_IP + SONY_TV_URL_SUFFIX
 
 // All the web page DOM class names and ids.
-const CLASS_TV_COMMAND = 'tv-command';
-const ID_TV_SETUP = 'tv-setup'; // form ID to save TV IP and Key
-const ID_TV_IP = 'tv-ip-address'; // ID of field that shows/updates TV IP
-const ID_TV_KEY = 'tv-key'; // ID of field that shows/updates TV Pre-Shared Key
-const ID_MAKE_CUSTOM_BUTTONS = 'make-custom-buttons'; // channel numbers
-const ID_CHANNEL_NUMBERS = 'tv-channel-numbers'; // displays channel buttons
-const ID_POPUP_TEXT = 'popup-text'; // normally hidden div to display messages
+const CLASS_TV_COMMAND = "tv-command";
+const ID_TV_SETUP = "tv-setup"; // form ID to save TV IP and Key
+const ID_TV_IP = "tv-ip-address"; // ID of field that shows/updates TV IP
+const ID_TV_KEY = "tv-key"; // ID of field that shows/updates TV Pre-Shared Key
+const ID_CHANNEL_NUMBERS = "tv-channel-numbers"; // displays channel buttons
+const ID_POPUP_TEXT = "popup-text"; // normally hidden div to display messages
 var POPUP_TEXT_ELEMENT = null; // ID_POPUP_TEXT element
-const CLASS_TAB_CONTENT = 'tab-content'; // each tab content div (buttons, etc)
-const CLASS_TAB_LINK = 'tab-link'; // navigation bar for the tabs
-const CSS_TAB_LINK_ACTIVE = 'tab-color-active'; // css of active tab link
-const DATASET_COMMANDS = 'stv.commands'; // HTML attribute: data-stv.commands
-const ID_TV_COMMAND_INPUT = 'tv-command-input'; // form ID with text box
-const ID_TV_TEXT_COMMAND = 'tv-input-1'; // input text box for command entry
+const CLASS_TAB_CONTENT = "tab-content"; // each tab content div (buttons, etc)
+const CLASS_TAB_LINK = "tab-link"; // navigation bar for the tabs
+const CSS_TAB_LINK_ACTIVE = "tab-color-active"; // css of active tab link
+const DATASET_COMMANDS = "stv.commands"; // HTML attribute: data-stv.commands
+const ID_TV_COMMAND_INPUT = "tv-command-input"; // form ID with text box
+const ID_TV_TEXT_COMMAND = "tv-input-1"; // input text box for command entry
 
 // key names used to store data in (local storage or browser.storage)
-const STORE_TV_IP = 'SonyTVIP';
-const STORE_TV_KEY = 'SonyTVPreSharedKey';
-const STORE_CHANNEL_BUTTONS = 'ChannelButtons';
+const STORE_TV_IP = "SonyTVIP";
+const STORE_TV_KEY = "SonyTVPreSharedKey";
+const STORE_CHANNEL_BUTTONS = "ChannelButtons";
 
 // The TV takes some time to complete commands, even after sending back
 // the XMLHttpRequest response. While many commands finish fast,
@@ -119,10 +94,9 @@ const COMMAND_AND_NAME_RE = / : /; // "command : name" format for custom buttons
 // Send the IRCCCode code of given COMMAND to the TV using a POST web request.
 // Returns a Promise that resolves when the request response is received.
 function sendCommand(command) {
-  return new Promise(function(resolve, reject) {
-
-    if (SONY_TV_IP == '' || SONY_TV_PRESHARED_KEY == '') {
-      const message = 'Error: No Sony TV IP or PreShared Key setup yet.';
+  return new Promise(function (resolve, reject) {
+    if (SONY_TV_IP == "" || SONY_TV_PRESHARED_KEY == "") {
+      const message = "Error: No Sony TV IP or PreShared Key setup yet.";
       console.error(message);
       reject(new Error(message));
       return;
@@ -130,7 +104,8 @@ function sendCommand(command) {
 
     const code = commandToCode(command);
     if (!code) {
-      const message = 'Error: IRCC code not found for command: "' + command + '"';
+      const message =
+        'Error: IRCC code not found for command: "' + command + '"';
       console.error(message);
       reject(new Error(message));
       return;
@@ -142,16 +117,28 @@ function sendCommand(command) {
     // a list of commands, one after the other. So caller adds a delay between
     // codes. It would be fine to change this to a synchronous call and use
     // a WebWorker thread to send lists of codes.
-    req.open('POST', tv_url, true);
+    req.open("POST", tv_url, true);
 
-    req.onreadystatechange = function() {
-      if (req.readyState == 4) { // XMLHttpRequest.DONE
+    req.onreadystatechange = function () {
+      if (req.readyState == 4) {
+        // XMLHttpRequest.DONE
         if (req.status != 200) {
           // Safety: JSON.parse does not evaluate the attacker's scripts.
           // const cleanedResponse = JSON.parse(req.responseText);
-          const message = 'Failed ' + command + ' ' + code + ' (Status '
-            + req.status + '): ' + tv_url + ' Key: ' + SONY_TV_PRESHARED_KEY
-            + ' (Response: "' + req.responseText + '")';
+          const message =
+            "Failed " +
+            command +
+            " " +
+            code +
+            " (Status " +
+            req.status +
+            "): " +
+            tv_url +
+            " Key: " +
+            SONY_TV_PRESHARED_KEY +
+            ' (Response: "' +
+            req.responseText +
+            '")';
           console.error(message);
           reject(new Error(message));
         } else {
@@ -159,15 +146,17 @@ function sendCommand(command) {
           resolve();
         }
       }
-    }
+    };
 
-    req.setRequestHeader('Content-Type', 'text/xml; charset=UTF-8');
+    req.setRequestHeader("Content-Type", "text/xml; charset=UTF-8");
     // Note: The SOAPAction header value must be enclosed in " otherwise get
     // an Invalid Action error from TV!
-    req.setRequestHeader('SOAPAction', '"urn:schemas-sony-com:service:IRCC:1#X_SendIRCC"');
-    req.setRequestHeader('X-Auth-PSK', SONY_TV_PRESHARED_KEY);
-    const data =
-      `<?xml version="1.0"?>
+    req.setRequestHeader(
+      "SOAPAction",
+      '"urn:schemas-sony-com:service:IRCC:1#X_SendIRCC"'
+    );
+    req.setRequestHeader("X-Auth-PSK", SONY_TV_PRESHARED_KEY);
+    const data = `<?xml version="1.0"?>
       <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
         <s:Body>
           <u:X_SendIRCC xmlns:u="urn:schemas-sony-com:service:IRCC:1">
@@ -199,158 +188,164 @@ function sendCommand(command) {
 function callRestApi(service, json) {
   // Example service = 'appControl';
   // Example json = '{"method":"getApplicationList","params":[],"id":60,"version":"1.0"}';
-  return new Promise(function(resolve, reject) {
-    if (SONY_TV_IP == '') {
-      const message = 'Error: No Sony TV IP setup yet.';
+  return new Promise(function (resolve, reject) {
+    if (SONY_TV_IP == "") {
+      const message = "Error: No Sony TV IP setup yet.";
       console.error(message);
       reject(new Error(message));
       return;
     }
     const req = new XMLHttpRequest();
-    const tv_url = SONY_TV_URL_PREFIX + SONY_TV_IP + '/sony/' + service;
-    req.open('POST', tv_url, true);
-    req.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
-    req.setRequestHeader('X-Auth-PSK', SONY_TV_PRESHARED_KEY);
+    const tv_url = SONY_TV_URL_PREFIX + SONY_TV_IP + "/sony/" + service;
+    req.open("POST", tv_url, true);
+    req.setRequestHeader("Content-Type", "application/json; charset=UTF-8");
+    req.setRequestHeader("X-Auth-PSK", SONY_TV_PRESHARED_KEY);
 
     req.timeout = 3000; // in milliseconds
 
-    req.onreadystatechange = function() {
-      if (req.readyState == 4) { // XMLHttpRequest.DONE
+    req.onreadystatechange = function () {
+      if (req.readyState == 4) {
+        // XMLHttpRequest.DONE
         if (req.status == 200) {
           // console.log('POST response received for: ' + tv_url);
           resolve(req.responseText);
         } else {
-          const message = 'Failed REST API (Status '
-            + req.status + '): ' + tv_url
-            + ' (Response: "' + req.responseText + '")';
+          const message =
+            "Failed REST API (Status " +
+            req.status +
+            "): " +
+            tv_url +
+            ' (Response: "' +
+            req.responseText +
+            '")';
           console.error(message);
           reject(new Error(message));
         }
       }
-    }
+    };
 
     req.send(json);
-    console.log('Sent REST service: ' + service + ' ' + json);
+    console.log("Sent REST service: " + service + " " + json);
   });
 }
 
 // --------------------------------------------------------------------------------
 // Maps each command to  IRCC code.  Use COMMAND_MAP[command] to access.
 const COMMAND_MAP = {};
-COMMAND_MAP['Num1'] = 'AAAAAQAAAAEAAAAAAw==';
-COMMAND_MAP['Num2'] = 'AAAAAQAAAAEAAAABAw==';
-COMMAND_MAP['Num3'] = 'AAAAAQAAAAEAAAACAw==';
-COMMAND_MAP['Num4'] = 'AAAAAQAAAAEAAAADAw==';
-COMMAND_MAP['Num5'] = 'AAAAAQAAAAEAAAAEAw==';
-COMMAND_MAP['Num6'] = 'AAAAAQAAAAEAAAAFAw==';
-COMMAND_MAP['Num7'] = 'AAAAAQAAAAEAAAAGAw==';
-COMMAND_MAP['Num8'] = 'AAAAAQAAAAEAAAAHAw==';
-COMMAND_MAP['Num9'] = 'AAAAAQAAAAEAAAAIAw==';
-COMMAND_MAP['Num0'] = 'AAAAAQAAAAEAAAAJAw==';
-COMMAND_MAP['Num11'] = 'AAAAAQAAAAEAAAAKAw==';
-COMMAND_MAP['Num12'] = 'AAAAAQAAAAEAAAALAw==';
-COMMAND_MAP['Enter'] = 'AAAAAQAAAAEAAAALAw==';
-COMMAND_MAP['GGuide'] = 'AAAAAQAAAAEAAAAOAw==';
-COMMAND_MAP['ChannelUp'] = 'AAAAAQAAAAEAAAAQAw==';
-COMMAND_MAP['ChannelDown'] = 'AAAAAQAAAAEAAAARAw==';
-COMMAND_MAP['VolumeUp'] = 'AAAAAQAAAAEAAAASAw==';
-COMMAND_MAP['VolumeDown'] = 'AAAAAQAAAAEAAAATAw==';
-COMMAND_MAP['Mute'] = 'AAAAAQAAAAEAAAAUAw==';
-COMMAND_MAP['TvPower'] = 'AAAAAQAAAAEAAAAVAw==';
-COMMAND_MAP['Audio'] = 'AAAAAQAAAAEAAAAXAw==';
-COMMAND_MAP['MediaAudioTrack'] = 'AAAAAQAAAAEAAAAXAw==';
-COMMAND_MAP['Tv'] = 'AAAAAQAAAAEAAAAkAw==';
-COMMAND_MAP['Input'] = 'AAAAAQAAAAEAAAAlAw==';
-COMMAND_MAP['TvInput'] = 'AAAAAQAAAAEAAAAlAw==';
-COMMAND_MAP['TvAntennaCable'] = 'AAAAAQAAAAEAAAAqAw==';
-COMMAND_MAP['WakeUp'] = 'AAAAAQAAAAEAAAAuAw==';
-COMMAND_MAP['PowerOff'] = 'AAAAAQAAAAEAAAAvAw==';
-COMMAND_MAP['Sleep'] = 'AAAAAQAAAAEAAAAvAw==';
-COMMAND_MAP['Right'] = 'AAAAAQAAAAEAAAAzAw==';
-COMMAND_MAP['Left'] = 'AAAAAQAAAAEAAAA0Aw==';
-COMMAND_MAP['SleepTimer'] = 'AAAAAQAAAAEAAAA2Aw==';
-COMMAND_MAP['Analog2'] = 'AAAAAQAAAAEAAAA4Aw==';
-COMMAND_MAP['TvAnalog'] = 'AAAAAQAAAAEAAAA4Aw==';
-COMMAND_MAP['Display'] = 'AAAAAQAAAAEAAAA6Aw==';
-COMMAND_MAP['Jump'] = 'AAAAAQAAAAEAAAA7Aw==';
-COMMAND_MAP['PicOff'] = 'AAAAAQAAAAEAAAA+Aw==';
-COMMAND_MAP['PictureOff'] = 'AAAAAQAAAAEAAAA+Aw==';
-COMMAND_MAP['Teletext'] = 'AAAAAQAAAAEAAAA/Aw==';
-COMMAND_MAP['Video1'] = 'AAAAAQAAAAEAAABAAw==';
-COMMAND_MAP['Video2'] = 'AAAAAQAAAAEAAABBAw==';
-COMMAND_MAP['AnalogRgb1'] = 'AAAAAQAAAAEAAABDAw==';
-COMMAND_MAP['Home'] = 'AAAAAQAAAAEAAABgAw==';
-COMMAND_MAP['Exit'] = 'AAAAAQAAAAEAAABjAw==';
-COMMAND_MAP['PictureMode'] = 'AAAAAQAAAAEAAABkAw==';
-COMMAND_MAP['Confirm'] = 'AAAAAQAAAAEAAABlAw==';
-COMMAND_MAP['Up'] = 'AAAAAQAAAAEAAAB0Aw==';
-COMMAND_MAP['Down'] = 'AAAAAQAAAAEAAAB1Aw==';
-COMMAND_MAP['ClosedCaption'] = 'AAAAAgAAAKQAAAAQAw==';
-COMMAND_MAP['Component1'] = 'AAAAAgAAAKQAAAA2Aw==';
-COMMAND_MAP['Component2'] = 'AAAAAgAAAKQAAAA3Aw==';
-COMMAND_MAP['Wide'] = 'AAAAAgAAAKQAAAA9Aw==';
-COMMAND_MAP['EPG'] = 'AAAAAgAAAKQAAABbAw==';
-COMMAND_MAP['PAP'] = 'AAAAAgAAAKQAAAB3Aw==';
-COMMAND_MAP['TenKey'] = 'AAAAAgAAAJcAAAAMAw==';
-COMMAND_MAP['BSCS'] = 'AAAAAgAAAJcAAAAQAw==';
-COMMAND_MAP['Ddata'] = 'AAAAAgAAAJcAAAAVAw==';
-COMMAND_MAP['Stop'] = 'AAAAAgAAAJcAAAAYAw==';
-COMMAND_MAP['Pause'] = 'AAAAAgAAAJcAAAAZAw==';
-COMMAND_MAP['Play'] = 'AAAAAgAAAJcAAAAaAw==';
-COMMAND_MAP['Rewind'] = 'AAAAAgAAAJcAAAAbAw==';
-COMMAND_MAP['Forward'] = 'AAAAAgAAAJcAAAAcAw==';
-COMMAND_MAP['DOT'] = 'AAAAAgAAAJcAAAAdAw==';
-COMMAND_MAP['Rec'] = 'AAAAAgAAAJcAAAAgAw==';
-COMMAND_MAP['Return'] = 'AAAAAgAAAJcAAAAjAw==';
-COMMAND_MAP['Blue'] = 'AAAAAgAAAJcAAAAkAw==';
-COMMAND_MAP['Red'] = 'AAAAAgAAAJcAAAAlAw==';
-COMMAND_MAP['Green'] = 'AAAAAgAAAJcAAAAmAw==';
-COMMAND_MAP['Yellow'] = 'AAAAAgAAAJcAAAAnAw==';
-COMMAND_MAP['SubTitle'] = 'AAAAAgAAAJcAAAAoAw==';
-COMMAND_MAP['CS'] = 'AAAAAgAAAJcAAAArAw==';
-COMMAND_MAP['BS'] = 'AAAAAgAAAJcAAAAsAw==';
-COMMAND_MAP['Digital'] = 'AAAAAgAAAJcAAAAyAw==';
-COMMAND_MAP['Options'] = 'AAAAAgAAAJcAAAA2Aw==';
-COMMAND_MAP['Media'] = 'AAAAAgAAAJcAAAA4Aw==';
-COMMAND_MAP['Prev'] = 'AAAAAgAAAJcAAAA8Aw==';
-COMMAND_MAP['Next'] = 'AAAAAgAAAJcAAAA9Aw==';
-COMMAND_MAP['DpadCenter'] = 'AAAAAgAAAJcAAABKAw==';
-COMMAND_MAP['CursorUp'] = 'AAAAAgAAAJcAAABPAw==';
-COMMAND_MAP['CursorDown'] = 'AAAAAgAAAJcAAABQAw==';
-COMMAND_MAP['CursorLeft'] = 'AAAAAgAAAJcAAABNAw==';
-COMMAND_MAP['CursorRight'] = 'AAAAAgAAAJcAAABOAw==';
-COMMAND_MAP['ShopRemoteControlForcedDynamic'] = 'AAAAAgAAAJcAAABqAw==';
-COMMAND_MAP['FlashPlus'] = 'AAAAAgAAAJcAAAB4Aw==';
-COMMAND_MAP['FlashMinus'] = 'AAAAAgAAAJcAAAB5Aw==';
-COMMAND_MAP['AudioQualityMode'] = 'AAAAAgAAAJcAAAB7Aw==';
-COMMAND_MAP['DemoMode'] = 'AAAAAgAAAJcAAAB8Aw==';
-COMMAND_MAP['Analog'] = 'AAAAAgAAAHcAAAANAw==';
-COMMAND_MAP['Mode3D'] = 'AAAAAgAAAHcAAABNAw==';
-COMMAND_MAP['DigitalToggle'] = 'AAAAAgAAAHcAAABSAw==';
-COMMAND_MAP['DemoSurround'] = 'AAAAAgAAAHcAAAB7Aw==';
-COMMAND_MAP['*AD'] = 'AAAAAgAAABoAAAA7Aw==';
-COMMAND_MAP['AudioMixUp'] = 'AAAAAgAAABoAAAA8Aw==';
-COMMAND_MAP['AudioMixDown'] = 'AAAAAgAAABoAAAA9Aw==';
-COMMAND_MAP['PhotoFrame'] = 'AAAAAgAAABoAAABVAw==';
-COMMAND_MAP['Tv_Radio'] = 'AAAAAgAAABoAAABXAw==';
-COMMAND_MAP['SyncMenu'] = 'AAAAAgAAABoAAABYAw==';
-COMMAND_MAP['Hdmi1'] = 'AAAAAgAAABoAAABaAw==';
-COMMAND_MAP['Hdmi2'] = 'AAAAAgAAABoAAABbAw==';
-COMMAND_MAP['Hdmi3'] = 'AAAAAgAAABoAAABcAw==';
-COMMAND_MAP['Hdmi4'] = 'AAAAAgAAABoAAABdAw==';
-COMMAND_MAP['TopMenu'] = 'AAAAAgAAABoAAABgAw==';
-COMMAND_MAP['PopUpMenu'] = 'AAAAAgAAABoAAABhAw==';
-COMMAND_MAP['OneTouchTimeRec'] = 'AAAAAgAAABoAAABkAw==';
-COMMAND_MAP['OneTouchView'] = 'AAAAAgAAABoAAABlAw==';
-COMMAND_MAP['DUX'] = 'AAAAAgAAABoAAABzAw==';
-COMMAND_MAP['FootballMode'] = 'AAAAAgAAABoAAAB2Aw==';
-COMMAND_MAP['iManual'] = 'AAAAAgAAABoAAAB7Aw==';
-COMMAND_MAP['Netflix'] = 'AAAAAgAAABoAAAB8Aw==';
-COMMAND_MAP['Assists'] = 'AAAAAgAAAMQAAAA7Aw==';
-COMMAND_MAP['ActionMenu'] = 'AAAAAgAAAMQAAABLAw==';
-COMMAND_MAP['Help'] = 'AAAAAgAAAMQAAABNAw==';
-COMMAND_MAP['TvSatellite'] = 'AAAAAgAAAMQAAABOAw==';
-COMMAND_MAP['WirelessSubwoofer'] = 'AAAAAgAAAMQAAAB+Aw==';
+COMMAND_MAP["Num1"] = "AAAAAQAAAAEAAAAAAw==";
+COMMAND_MAP["Num2"] = "AAAAAQAAAAEAAAABAw==";
+COMMAND_MAP["Num3"] = "AAAAAQAAAAEAAAACAw==";
+COMMAND_MAP["Num4"] = "AAAAAQAAAAEAAAADAw==";
+COMMAND_MAP["Num5"] = "AAAAAQAAAAEAAAAEAw==";
+COMMAND_MAP["Num6"] = "AAAAAQAAAAEAAAAFAw==";
+COMMAND_MAP["Num7"] = "AAAAAQAAAAEAAAAGAw==";
+COMMAND_MAP["Num8"] = "AAAAAQAAAAEAAAAHAw==";
+COMMAND_MAP["Num9"] = "AAAAAQAAAAEAAAAIAw==";
+COMMAND_MAP["Num0"] = "AAAAAQAAAAEAAAAJAw==";
+COMMAND_MAP["Num11"] = "AAAAAQAAAAEAAAAKAw==";
+COMMAND_MAP["Num12"] = "AAAAAQAAAAEAAAALAw==";
+COMMAND_MAP["Enter"] = "AAAAAQAAAAEAAAALAw==";
+COMMAND_MAP["GGuide"] = "AAAAAQAAAAEAAAAOAw==";
+COMMAND_MAP["ChannelUp"] = "AAAAAQAAAAEAAAAQAw==";
+COMMAND_MAP["ChannelDown"] = "AAAAAQAAAAEAAAARAw==";
+COMMAND_MAP["VolumeUp"] = "AAAAAQAAAAEAAAASAw==";
+COMMAND_MAP["VolumeDown"] = "AAAAAQAAAAEAAAATAw==";
+COMMAND_MAP["Mute"] = "AAAAAQAAAAEAAAAUAw==";
+COMMAND_MAP["TvPower"] = "AAAAAQAAAAEAAAAVAw==";
+COMMAND_MAP["Audio"] = "AAAAAQAAAAEAAAAXAw==";
+COMMAND_MAP["MediaAudioTrack"] = "AAAAAQAAAAEAAAAXAw==";
+COMMAND_MAP["Tv"] = "AAAAAQAAAAEAAAAkAw==";
+COMMAND_MAP["Input"] = "AAAAAQAAAAEAAAAlAw==";
+COMMAND_MAP["TvInput"] = "AAAAAQAAAAEAAAAlAw==";
+COMMAND_MAP["TvAntennaCable"] = "AAAAAQAAAAEAAAAqAw==";
+COMMAND_MAP["WakeUp"] = "AAAAAQAAAAEAAAAuAw==";
+COMMAND_MAP["PowerOff"] = "AAAAAQAAAAEAAAAvAw==";
+COMMAND_MAP["Sleep"] = "AAAAAQAAAAEAAAAvAw==";
+COMMAND_MAP["Right"] = "AAAAAQAAAAEAAAAzAw==";
+COMMAND_MAP["Left"] = "AAAAAQAAAAEAAAA0Aw==";
+COMMAND_MAP["SleepTimer"] = "AAAAAQAAAAEAAAA2Aw==";
+COMMAND_MAP["Analog2"] = "AAAAAQAAAAEAAAA4Aw==";
+COMMAND_MAP["TvAnalog"] = "AAAAAQAAAAEAAAA4Aw==";
+COMMAND_MAP["Display"] = "AAAAAQAAAAEAAAA6Aw==";
+COMMAND_MAP["Jump"] = "AAAAAQAAAAEAAAA7Aw==";
+COMMAND_MAP["PicOff"] = "AAAAAQAAAAEAAAA+Aw==";
+COMMAND_MAP["PictureOff"] = "AAAAAQAAAAEAAAA+Aw==";
+COMMAND_MAP["Teletext"] = "AAAAAQAAAAEAAAA/Aw==";
+COMMAND_MAP["Video1"] = "AAAAAQAAAAEAAABAAw==";
+COMMAND_MAP["Video2"] = "AAAAAQAAAAEAAABBAw==";
+COMMAND_MAP["AnalogRgb1"] = "AAAAAQAAAAEAAABDAw==";
+COMMAND_MAP["Home"] = "AAAAAQAAAAEAAABgAw==";
+COMMAND_MAP["Exit"] = "AAAAAQAAAAEAAABjAw==";
+COMMAND_MAP["PictureMode"] = "AAAAAQAAAAEAAABkAw==";
+COMMAND_MAP["Confirm"] = "AAAAAQAAAAEAAABlAw==";
+COMMAND_MAP["Up"] = "AAAAAQAAAAEAAAB0Aw==";
+COMMAND_MAP["Down"] = "AAAAAQAAAAEAAAB1Aw==";
+COMMAND_MAP["ClosedCaption"] = "AAAAAgAAAKQAAAAQAw==";
+COMMAND_MAP["Component1"] = "AAAAAgAAAKQAAAA2Aw==";
+COMMAND_MAP["Component2"] = "AAAAAgAAAKQAAAA3Aw==";
+COMMAND_MAP["Wide"] = "AAAAAgAAAKQAAAA9Aw==";
+COMMAND_MAP["EPG"] = "AAAAAgAAAKQAAABbAw==";
+COMMAND_MAP["PAP"] = "AAAAAgAAAKQAAAB3Aw==";
+COMMAND_MAP["TenKey"] = "AAAAAgAAAJcAAAAMAw==";
+COMMAND_MAP["BSCS"] = "AAAAAgAAAJcAAAAQAw==";
+COMMAND_MAP["Ddata"] = "AAAAAgAAAJcAAAAVAw==";
+COMMAND_MAP["Stop"] = "AAAAAgAAAJcAAAAYAw==";
+COMMAND_MAP["Pause"] = "AAAAAgAAAJcAAAAZAw==";
+COMMAND_MAP["Play"] = "AAAAAgAAAJcAAAAaAw==";
+COMMAND_MAP["Rewind"] = "AAAAAgAAAJcAAAAbAw==";
+COMMAND_MAP["Forward"] = "AAAAAgAAAJcAAAAcAw==";
+COMMAND_MAP["DOT"] = "AAAAAgAAAJcAAAAdAw==";
+COMMAND_MAP["Rec"] = "AAAAAgAAAJcAAAAgAw==";
+COMMAND_MAP["Return"] = "AAAAAgAAAJcAAAAjAw==";
+COMMAND_MAP["Blue"] = "AAAAAgAAAJcAAAAkAw==";
+COMMAND_MAP["Red"] = "AAAAAgAAAJcAAAAlAw==";
+COMMAND_MAP["Green"] = "AAAAAgAAAJcAAAAmAw==";
+COMMAND_MAP["Yellow"] = "AAAAAgAAAJcAAAAnAw==";
+COMMAND_MAP["SubTitle"] = "AAAAAgAAAJcAAAAoAw==";
+COMMAND_MAP["CS"] = "AAAAAgAAAJcAAAArAw==";
+COMMAND_MAP["BS"] = "AAAAAgAAAJcAAAAsAw==";
+COMMAND_MAP["Digital"] = "AAAAAgAAAJcAAAAyAw==";
+COMMAND_MAP["Options"] = "AAAAAgAAAJcAAAA2Aw==";
+COMMAND_MAP["Media"] = "AAAAAgAAAJcAAAA4Aw==";
+COMMAND_MAP["Prev"] = "AAAAAgAAAJcAAAA8Aw==";
+COMMAND_MAP["Next"] = "AAAAAgAAAJcAAAA9Aw==";
+COMMAND_MAP["DpadCenter"] = "AAAAAgAAAJcAAABKAw==";
+COMMAND_MAP["CursorUp"] = "AAAAAgAAAJcAAABPAw==";
+COMMAND_MAP["CursorDown"] = "AAAAAgAAAJcAAABQAw==";
+COMMAND_MAP["CursorLeft"] = "AAAAAgAAAJcAAABNAw==";
+COMMAND_MAP["CursorRight"] = "AAAAAgAAAJcAAABOAw==";
+COMMAND_MAP["ShopRemoteControlForcedDynamic"] = "AAAAAgAAAJcAAABqAw==";
+COMMAND_MAP["FlashPlus"] = "AAAAAgAAAJcAAAB4Aw==";
+COMMAND_MAP["FlashMinus"] = "AAAAAgAAAJcAAAB5Aw==";
+COMMAND_MAP["AudioQualityMode"] = "AAAAAgAAAJcAAAB7Aw==";
+COMMAND_MAP["DemoMode"] = "AAAAAgAAAJcAAAB8Aw==";
+COMMAND_MAP["Analog"] = "AAAAAgAAAHcAAAANAw==";
+COMMAND_MAP["Mode3D"] = "AAAAAgAAAHcAAABNAw==";
+COMMAND_MAP["DigitalToggle"] = "AAAAAgAAAHcAAABSAw==";
+COMMAND_MAP["DemoSurround"] = "AAAAAgAAAHcAAAB7Aw==";
+COMMAND_MAP["*AD"] = "AAAAAgAAABoAAAA7Aw==";
+COMMAND_MAP["AudioMixUp"] = "AAAAAgAAABoAAAA8Aw==";
+COMMAND_MAP["AudioMixDown"] = "AAAAAgAAABoAAAA9Aw==";
+COMMAND_MAP["PhotoFrame"] = "AAAAAgAAABoAAABVAw==";
+COMMAND_MAP["Tv_Radio"] = "AAAAAgAAABoAAABXAw==";
+COMMAND_MAP["SyncMenu"] = "AAAAAgAAABoAAABYAw==";
+COMMAND_MAP["Hdmi1"] = "AAAAAgAAABoAAABaAw==";
+COMMAND_MAP["Hdmi2"] = "AAAAAgAAABoAAABbAw==";
+COMMAND_MAP["Hdmi3"] = "AAAAAgAAABoAAABcAw==";
+COMMAND_MAP["Hdmi4"] = "AAAAAgAAABoAAABdAw==";
+COMMAND_MAP["TopMenu"] = "AAAAAgAAABoAAABgAw==";
+COMMAND_MAP["PopUpMenu"] = "AAAAAgAAABoAAABhAw==";
+COMMAND_MAP["OneTouchTimeRec"] = "AAAAAgAAABoAAABkAw==";
+COMMAND_MAP["OneTouchView"] = "AAAAAgAAABoAAABlAw==";
+COMMAND_MAP["DUX"] = "AAAAAgAAABoAAABzAw==";
+COMMAND_MAP["FootballMode"] = "AAAAAgAAABoAAAB2Aw==";
+COMMAND_MAP["iManual"] = "AAAAAgAAABoAAAB7Aw==";
+COMMAND_MAP["Netflix"] = "AAAAAgAAABoAAAB8Aw==";
+COMMAND_MAP["Assists"] = "AAAAAgAAAMQAAAA7Aw==";
+COMMAND_MAP["ActionMenu"] = "AAAAAgAAAMQAAABLAw==";
+COMMAND_MAP["Help"] = "AAAAAgAAAMQAAABNAw==";
+COMMAND_MAP["TvSatellite"] = "AAAAAgAAAMQAAABOAw==";
+COMMAND_MAP["WirelessSubwoofer"] = "AAAAAgAAAMQAAAB+Aw==";
 
 function commandToCode(command) {
   // Return the IRCC code correspond to command. Returns undefined on failure.
@@ -383,7 +378,7 @@ function checkClearPopup() {
   const timeLeft = popupEndTime - Date.now();
 
   if (timeLeft <= 0) {
-    POPUP_TEXT_ELEMENT.classList.add('hide');
+    POPUP_TEXT_ELEMENT.classList.add("hide");
   } else {
     const delay = Math.min(timeLeft, POPUP_CHECK_PERIOD);
     setTimeout(checkClearPopup, delay);
@@ -402,7 +397,7 @@ function displayPopup(message, level, msec = -1) {
   // This means we need to remove the hide class on start, and add it again
   // when done. Also need to remove the initial class added to hide visibility
   // on page load. [hide-initial is never added again]
-  POPUP_TEXT_ELEMENT.classList.remove('hide', 'hide-initial');
+  POPUP_TEXT_ELEMENT.classList.remove("hide", "hide-initial");
   if (msec >= 0) {
     popupEndTime = Date.now() + msec;
     const delay = Math.min(msec, POPUP_CHECK_PERIOD);
@@ -423,13 +418,15 @@ function channelToCommands(number) {
   }
   const commands = [];
   for (let c of number) {
-    let command = '';
-    if (c >= '0' && c <= '9') {
-      command = 'Num' + c;
-    } else if (c == '.') {
-      command = 'DOT';
+    let command = "";
+    if (c >= "0" && c <= "9") {
+      command = "Num" + c;
+    } else if (c == ".") {
+      command = "DOT";
     } else {
-      console.log('Unexpected error: invalid channel character ' + c + ' for ' + number);
+      console.log(
+        "Unexpected error: invalid channel character " + c + " for " + number
+      );
       return null;
     }
     commands.push(command);
@@ -452,29 +449,35 @@ function sendCommands(inputCommands) {
   }
 
   // For feedback, display codes as they are sent
-  let message = 'Sent:'; // Used by then() closure below
+  let message = "Sent:"; // Used by then() closure below
 
   displayPopup(message, LEVEL_INFO); // will clear this on command completion
 
   // Chain the sending of the commands through the async HTTP request calls,
   // and insert a short delay after each command.
-  // Reduce all commands to a single Promise. 
-  allCommands.reduce((sequence, command) => {
-    return sequence
-      .then(() => {
-        message += ' ' + command;
-        console.log(`Send Command '${command}' Code '${COMMAND_MAP[command]}'`);
-        displayPopup(message, LEVEL_INFO);
-        return sendCommand(command);
-      }).then(() => {
-        // After the TV HTTP request has responded, wait a bit more
-        // to allow TV some time to complete command.
-        return sleep(WAIT_AFTER_COMMAND);
-      });
-  }, Promise.resolve()) // Start the reduce with an resolved promise
-    .then(() => { // All commands completed
+  // Reduce all commands to a single Promise.
+  allCommands
+    .reduce((sequence, command) => {
+      return sequence
+        .then(() => {
+          message += " " + command;
+          console.log(
+            `Send Command '${command}' Code '${COMMAND_MAP[command]}'`
+          );
+          displayPopup(message, LEVEL_INFO);
+          return sendCommand(command);
+        })
+        .then(() => {
+          // After the TV HTTP request has responded, wait a bit more
+          // to allow TV some time to complete command.
+          return sleep(WAIT_AFTER_COMMAND);
+        });
+    }, Promise.resolve()) // Start the reduce with an resolved promise
+    .then(() => {
+      // All commands completed
       displayPopup(null, LEVEL_INFO, STATUS_MESSAGE_TIME); // now clear the message
-    }).catch((err) => {
+    })
+    .catch((err) => {
       // This will come here if any of the tasks above rejects or throws Error
       displayPopup(err.message, LEVEL_ERROR, ERROR_MESSAGE_TIME);
     });
@@ -524,66 +527,17 @@ function textCommand(e) {
 }
 
 // --------------------------------------------------------------------------------
-// Create DOM button elements for the quick access commands or channels.
-// Format of each button is command-or-channel-number : button-name\n
-function createChannelButtons(commandsString) {
-  if (!commandsString) {
-    console.log('Skipping custom buttons creation - string is empty');
-    return;
-  }
-  const commands = commandsString.split(NEWLINE_RE);
-  const oldChannelsDiv = document.getElementById(ID_CHANNEL_NUMBERS);
-
-  // remove existing channel buttons - child nodes of oldChannelsDiv
-  const newParentDiv = oldChannelsDiv.cloneNode(false);
-  oldChannelsDiv.parentNode.replaceChild(newParentDiv, oldChannelsDiv);
-
-  // add all the new channels
-  for (let commandAndName of commands) {
-    const commandAndNameV = commandAndName.split(COMMAND_AND_NAME_RE);
-    const command = commandAndNameV[0].trim();
-    if (!command) continue;
-    const name = (commandAndNameV.length > 1 ? commandAndNameV[1].trim() : command);
-
-    /* Example div to create for channel 2.1:
-    <div class="columns" id="tv-channel-numbers">
-      <div class="one-fourth-item">
-        <button type="button" class="tv-command" data-stv.commands="2.1">2.1</button>
-      </div>
-      ...
-    */
-    const newItem = document.createElement('div');
-    newItem.setAttribute('class', 'one-fourth-item'); // 4 buttons per row
-
-    const newButton = document.createElement('button');
-    newButton.appendChild(document.createTextNode(name));
-    newButton.setAttribute('class', 'tv-command');
-    newButton.setAttribute('type', 'button');
-    newButton.setAttribute('data-' + DATASET_COMMANDS, command);
-    newButton.setAttribute('title', command); // hover text
-    newItem.appendChild(newButton);
-
-    // add the newly created row element and its content into the DOM 
-    newParentDiv.appendChild(newItem);
-    // console.log('Adding child ', newRow);
-  }
-
-  // Connect all buttons to the click handler
-  setupButtonsOnclick();
-}
-
-// --------------------------------------------------------------------------------
 /* Web page onLoad init function. Attach listeners */
 
 function onLoadFunction() {
-
   // TV Setup load and save. Loads IP address/key from local storage,
   // and creates all remote control buttons and sets up their onclick handler.
   restoreTVSetup();
 
-  document.getElementById(ID_TV_SETUP).addEventListener('submit', saveTVSetup);
-  document.getElementById(ID_TV_COMMAND_INPUT).addEventListener('submit',
-    textCommand);
+  document.getElementById(ID_TV_SETUP).addEventListener("submit", saveTVSetup);
+  document
+    .getElementById(ID_TV_COMMAND_INPUT)
+    .addEventListener("submit", textCommand);
 
   POPUP_TEXT_ELEMENT = document.getElementById(ID_POPUP_TEXT);
 
@@ -593,22 +547,22 @@ function onLoadFunction() {
     const tabLink = tabLinks[i];
     tabLink.onclick = () => {
       openTab(tabLink);
-    }
+    };
   }
 
   // Open up appropriate tab, close other tabs.
   if (!SONY_TV_IP || !SONY_TV_PRESHARED_KEY) {
-    openTab(document.getElementById('tab-setup-link'));
+    openTab(document.getElementById("tab-setup-link"));
   } else {
-    openTab(document.getElementById('tab-buttons-link'));
+    openTab(document.getElementById("tab-buttons-link"));
   }
 
   // Help page has a version field, fill it in.
-  if (typeof browser != 'undefined') {
+  if (typeof browser != "undefined") {
     // Only do this if we are running as an extension, and not loading
     // this script on its own (for local web display testing, for example).
     const manifest = browser.runtime.getManifest();
-    const element = document.getElementById('about-version');
+    const element = document.getElementById("about-version");
     element.textContent = manifest.version;
   }
 
@@ -617,37 +571,43 @@ function onLoadFunction() {
   // This requires using the REST API JSON RPC
   // Equivalant to: curl --silent -XPOST http://$SonyBraviaIP/sony/system -d '{"method":"getRemoteControllerInfo","params":[],"id":10,"version":"1.0"}'  | python -m json.tool
 
-  const controller = document.getElementById('controller-info-button');
-  const controllerOutput = document.getElementById('controller-info-output');
+  const controller = document.getElementById("controller-info-button");
+  const controllerOutput = document.getElementById("controller-info-output");
   if (controller && controllerOutput) {
     controller.onclick = () => {
-      callRestApi('system',
-        '{"method":"getRemoteControllerInfo","params":[],"id":10,"version":"1.0"}')
-      .then((responseText) => {
-        controllerOutput.textContent = responseText;
-      }).catch((err) => {
-        displayPopup(err.message, LEVEL_ERROR, ERROR_MESSAGE_TIME);
-      });
-    }
+      callRestApi(
+        "system",
+        '{"method":"getRemoteControllerInfo","params":[],"id":10,"version":"1.0"}'
+      )
+        .then((responseText) => {
+          controllerOutput.textContent = responseText;
+        })
+        .catch((err) => {
+          displayPopup(err.message, LEVEL_ERROR, ERROR_MESSAGE_TIME);
+        });
+    };
   }
 
   // ===========
   // REST API JSON RPC support
-  document.getElementById("rest-service-form").addEventListener('submit',
-      callRestServiceForm);
+  document
+    .getElementById("rest-service-form")
+    .addEventListener("submit", callRestServiceForm);
 
   {
-  // Pre-built commands: REST API getApplicationList call and output
-  const getAppList = document.getElementById('getApplicationList-button');
-  const getAppListJson = '{"method":"getApplicationList","params":[],"id":60,"version":"1.0"}';
-  connectRestAPIButton(getAppList, 'appControl', getAppListJson);
+    // Pre-built commands: REST API getApplicationList call and output
+    const getAppList = document.getElementById("getApplicationList-button");
+    const getAppListJson =
+      '{"method":"getApplicationList","params":[],"id":60,"version":"1.0"}';
+    connectRestAPIButton(getAppList, "appControl", getAppListJson);
   }
 
   {
-  // Pre-built commands: REST API getCurrentTime call and output
-  const currentTimeButton = document.getElementById('getCurrentTime-button');
-  const currentTimeJson = '{"method": "getCurrentTime","params": [],"id": 51,"version": "1.1"}';
-  connectRestAPIButton(currentTimeButton, 'system', currentTimeJson);
+    // Pre-built commands: REST API getCurrentTime call and output
+    const currentTimeButton = document.getElementById("getCurrentTime-button");
+    const currentTimeJson =
+      '{"method": "getCurrentTime","params": [],"id": 51,"version": "1.1"}';
+    connectRestAPIButton(currentTimeButton, "system", currentTimeJson);
   }
   /*
   {
@@ -658,16 +618,26 @@ function onLoadFunction() {
   }
   */
   {
-  // Pre-built commands: REST API call to start YouTube
-  const button = document.getElementById('youtube-button');
-  const json = '{"method": "setActiveApp", "id": 601, "params": [{ "uri": "com.sony.dtv.com.google.android.youtube.tv.com.google.android.apps.youtube.tv.activity.ShellActivity"}], "version": "1.0" }';
-  connectRestAPIButton(button, 'appControl', json);
+    // Pre-built commands: REST API call to start YouTube
+    const button = document.getElementById("youtube-button");
+    const json =
+      '{"method": "setActiveApp", "id": 601, "params": [{ "uri": "com.sony.dtv.com.google.android.youtube.tv.com.google.android.apps.youtube.tv.activity.ShellActivity"}], "version": "1.0" }';
+    connectRestAPIButton(button, "appControl", json);
   }
   {
-  // Pre-built commands: REST API requestReboot call and output
-  const rebootJson = '{"method": "requestReboot","params": [],"id": 10,"version":"1.0"}';
-  connectRestAPIButton(document.getElementById('reboot-button1'), 'system', rebootJson);
-  connectRestAPIButton(document.getElementById('reboot-button2'), 'system', rebootJson);
+    // Pre-built commands: REST API requestReboot call and output
+    const rebootJson =
+      '{"method": "requestReboot","params": [],"id": 10,"version":"1.0"}';
+    connectRestAPIButton(
+      document.getElementById("reboot-button1"),
+      "system",
+      rebootJson
+    );
+    connectRestAPIButton(
+      document.getElementById("reboot-button2"),
+      "system",
+      rebootJson
+    );
   }
 }
 
@@ -681,12 +651,11 @@ function saveTVSetup(e) {
   e.preventDefault();
   const IP = document.getElementById(ID_TV_IP).value;
   const key = document.getElementById(ID_TV_KEY).value;
-  let message = 'Data saved locally.';
+  let message = "Data saved locally.";
   // Save whatever value user has entered - even if it is empty
   // to allow for clearing of stored values.
   localStorage.setItem(STORE_TV_IP, IP);
   localStorage.setItem(STORE_TV_KEY, key);
-  const channelsString = document.getElementById(ID_MAKE_CUSTOM_BUTTONS).value;
   localStorage.setItem(STORE_CHANNEL_BUTTONS, channelsString);
 
   displayPopup(message, LEVEL_FEEDBACK, STATUS_MESSAGE_TIME);
@@ -700,28 +669,24 @@ function saveTVSetup(e) {
 function restoreTVSetup() {
   SONY_TV_IP = localStorage.getItem(STORE_TV_IP);
   SONY_TV_PRESHARED_KEY = localStorage.getItem(STORE_TV_KEY);
-  const channelsString = localStorage.getItem(STORE_CHANNEL_BUTTONS) ||
-    DEFAULT_COMMAND_BUTTONS;
 
   document.getElementById(ID_TV_IP).value = SONY_TV_IP;
   document.getElementById(ID_TV_KEY).value = SONY_TV_PRESHARED_KEY;
-  document.getElementById(ID_MAKE_CUSTOM_BUTTONS).value = channelsString;
-
-  // Create page elements - quick access channel buttons
-  createChannelButtons(channelsString);
 }
 
 // --------------------------------------------------------------------------------
 // Tabs support
 function openTab(tabLink) {
   for (let e of document.getElementsByClassName(CLASS_TAB_CONTENT)) {
-    e.style.display = 'none';
+    e.style.display = "none";
   }
-  const activeTab = document.getElementById(tabLink.id.replace('-link', '-content'));
-  activeTab.style.display = 'block';
-  const replaceClass = ' ' + CSS_TAB_LINK_ACTIVE;
+  const activeTab = document.getElementById(
+    tabLink.id.replace("-link", "-content")
+  );
+  activeTab.style.display = "block";
+  const replaceClass = " " + CSS_TAB_LINK_ACTIVE;
   for (let e of document.getElementsByClassName(CLASS_TAB_LINK)) {
-    e.className = e.className.replace(replaceClass, '');
+    e.className = e.className.replace(replaceClass, "");
   }
   tabLink.className += replaceClass;
   window.scrollTo(0, 0); // Jump to top of page
@@ -729,25 +694,28 @@ function openTab(tabLink) {
 
 // --------------------------------------------------------------------------------
 // REST API JSON RPC support
-function callRestServiceForm (e) {
+function callRestServiceForm(e) {
   e.preventDefault();
   const service = document.getElementById("rest-service").value;
   const json = document.getElementById("rest-json").value;
   const output = document.getElementById("rest-service-output");
-  callRestApi(service, json).then((responseText) => {
-        output.textContent = responseText;
-        output.value = responseText; // for firefox
-      }).catch((err) => {
-        displayPopup(err.message, LEVEL_ERROR, ERROR_MESSAGE_TIME);
-      });
+  callRestApi(service, json)
+    .then((responseText) => {
+      output.textContent = responseText;
+      output.value = responseText; // for firefox
+    })
+    .catch((err) => {
+      displayPopup(err.message, LEVEL_ERROR, ERROR_MESSAGE_TIME);
+    });
 }
 
 // Connect a button to given REST API service + json
-function connectRestAPIButton (controller, service, json) {
+function connectRestAPIButton(controller, service, json) {
   if (controller == null) {
-      const message = 'Error: NULL controller - missing HTML id for ' + service + ' ' + json;
-      console.error(message);
-      return;
+    const message =
+      "Error: NULL controller - missing HTML id for " + service + " " + json;
+    console.error(message);
+    return;
   }
   const serviceElement = document.getElementById("rest-service");
   const jsonElement = document.getElementById("rest-json");
@@ -759,12 +727,14 @@ function connectRestAPIButton (controller, service, json) {
     // textArea in firefox does not work with .textContent so use .value
     jsonElement.value = json;
     // Make the call
-    callRestApi(service, json).then((responseText) => {
+    callRestApi(service, json)
+      .then((responseText) => {
         output.value = responseText;
-      }).catch((err) => {
+      })
+      .catch((err) => {
         displayPopup(err.message, LEVEL_ERROR, ERROR_MESSAGE_TIME);
       });
-  }
+  };
 }
 
 // --------------------------------------------------------------------------------
