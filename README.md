@@ -2,7 +2,7 @@
 
 ## Intent
 
-Forked from [here](https://github.com/avinash311/sony-tv-remote), this repo is intended to be used as source control for a simple tv-remote interface for my parents to use at home. Few reasons why:
+Initially forked from [here](https://github.com/avinash311/sony-tv-remote), this repo is intended to be used as source control for a simple tv-remote interface for my parents to use at home. Few reasons why:
 
 1. They are older now, so their eyesight is not as it used to be
 2. The original remote is cluttered with buttons and inputs, and its also rare and expensive (theirs is broken)
